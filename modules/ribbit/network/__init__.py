@@ -183,68 +183,15 @@ class NetworkManager:
             while True:
                 force_reconnect = cfg_watcher.changed or self._reconnect_event.is_set()
                 config = cfg_watcher.get()[0]
-                if driver is None and config is not None and config["type"] != "none":
-                    if config["type"] == "wifi" or config["type"] == "ethernet":
-                        ifconfig = None
-                        if config["ip"] is not None:
-                            ifconfig = (
-                                config["ip"],
-                                config["netmask"],
-                                config["gateway"],
-                                config["dns"],
-                            )
+                if driver is None:
+                    ifconfig = None
 
-                        if config["type"] == "wifi":
-                            from .wlan import _WLANDriver
+                    from .ethernet import _EthernetDriver
 
-                            driver = _WLANDriver(
-                                ssid=config["ssid"],
-                                password=config["password"],
-                                ifconfig=ifconfig,
-                            )
-
-                        elif config["type"] == "ethernet":
-                            from .ethernet import _EthernetDriver
-
-                            driver = _EthernetDriver(
-                                i2c_bus=self._i2c_bus,
-                                ifconfig=ifconfig,
-                            )
-
-                    elif config["type"] == "wifi-ap":
-                        from .wlan import _WLANDriver
-
-                        machine_id = binascii.hexlify(machine.unique_id()).decode(
-                            "ascii"
-                        )
-                        driver = _WLANDriver(
-                            ssid=f"frog-{machine_id}",
-                            password=None,
-                            ap_mode=True,
-                        )
-
-                    elif config["type"] == "gsm":
-                        from .gsm import _GSMDriver
-
-                        uart = machine.UART(
-                            2,
-                            baudrate=115200,
-                            bits=8,
-                            parity=None,
-                            stop=1,
-                            rx=38,
-                            tx=39,
-                            rts=11,
-                            cts=10,
-                        )
-
-                        driver = _GSMDriver(
-                            uart=uart,
-                            apn="hologram",
-                        )
-
-                    else:
-                        raise ValueError("unsupported network type")
+                    driver = _EthernetDriver(
+                        i2c_bus=self._i2c_bus,
+                        ifconfig=ifconfig,
+                    )
 
                 if driver is not None:
                     status = driver.status()
